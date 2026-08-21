@@ -1,0 +1,16 @@
+{
+  "total_days": 653,
+  "long_days": 314,
+  "time_in_market": 0.48085758039816234,
+  "position_changes": 204,
+  "trades": 102,
+  "wins": 36,
+  "losses": 66,
+  "win_rate": 0.35294117647058826,
+  "average_trade_return": 0.003013006962772193,
+  "median_trade_return": -0.0004999999999999449,
+  "best_trade": 0.040677970774956496,
+  "worst_trade": -0.030914079686828244,
+  "average_holding_days": 4.509803921568627,
+  "longest_losing_streak": 12
+}

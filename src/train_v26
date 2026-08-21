@@ -1,0 +1,237 @@
+"""
+============================================================
+V26 PPO LEARNER
+============================================================
+
+Research / paper trading ONLY.
+
+V26:
+    0 = FLAT
+    1 = LONG
+
+Training:
+    2015 -> 2023
+
+Holdout:
+    2024 -> 2026
+
+No holdout data is used during training.
+"""
+
+from pathlib import Path
+
+from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import BaseCallback
+
+from trading_env_v26 import TradingEnvironmentV26
+
+
+# ============================================================
+# CONFIG
+# ============================================================
+
+MODEL_DIR = Path("models")
+
+MODEL_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+MODEL_PATH = (
+    MODEL_DIR
+    / "v26_ppo"
+)
+
+TOTAL_TIMESTEPS = 500_000
+
+EPISODE_LENGTH = 252
+
+SEED = 42
+
+
+# ============================================================
+# PROGRESS CALLBACK
+# ============================================================
+
+class ProgressCallback(BaseCallback):
+
+    def __init__(
+        self,
+        print_every=10_000
+    ):
+
+        super().__init__()
+
+        self.print_every = (
+            print_every
+        )
+
+        self.last_print = 0
+
+    def _on_step(self):
+
+        if (
+            self.num_timesteps
+            - self.last_print
+            >= self.print_every
+        ):
+
+            self.last_print = (
+                self.num_timesteps
+            )
+
+            print(
+                f"[V26] "
+                f"Training steps: "
+                f"{self.num_timesteps:,}"
+            )
+
+        return True
+
+
+# ============================================================
+# ENVIRONMENT
+# ============================================================
+
+def create_environment():
+
+    env = TradingEnvironmentV26(
+        episode_length=EPISODE_LENGTH,
+        seed=SEED,
+    )
+
+    return env
+
+
+# ============================================================
+# TRAIN
+# ============================================================
+
+def train():
+
+    print()
+    print("=" * 60)
+    print("V26 REINFORCEMENT LEARNING")
+    print("=" * 60)
+
+    print()
+    print(
+        "[V26] Creating environment..."
+    )
+
+    env = create_environment()
+
+    print(
+        f"[V26] Observations: "
+        f"{env.observation_space.shape[0]}"
+    )
+
+    print(
+        f"[V26] Actions: "
+        f"{env.action_space.n}"
+    )
+
+    print(
+        f"[V26] Training dates: "
+        f"{env.data['Date'].min().date()} "
+        f"→ "
+        f"{env.data['Date'].max().date()}"
+    )
+
+    env.leakage_check()
+
+    # --------------------------------------------------------
+    # PPO
+    # --------------------------------------------------------
+
+    print()
+    print(
+        "[V26] Creating PPO agent..."
+    )
+
+    model = PPO(
+
+        policy="MlpPolicy",
+
+        env=env,
+
+        learning_rate=3e-4,
+
+        n_steps=2048,
+
+        batch_size=64,
+
+        n_epochs=10,
+
+        gamma=0.99,
+
+        gae_lambda=0.95,
+
+        clip_range=0.2,
+
+        ent_coef=0.01,
+
+        vf_coef=0.5,
+
+        max_grad_norm=0.5,
+
+        verbose=1,
+
+        seed=SEED,
+
+        device="auto",
+    )
+
+    print()
+    print(
+        "[V26] Starting training..."
+    )
+
+    print(
+        f"[V26] Timesteps: "
+        f"{TOTAL_TIMESTEPS:,}"
+    )
+
+    # --------------------------------------------------------
+    # LEARNING LOOP
+    # --------------------------------------------------------
+
+    model.learn(
+
+        total_timesteps=(
+            TOTAL_TIMESTEPS
+        ),
+
+        callback=ProgressCallback(),
+
+        reset_num_timesteps=True,
+    )
+
+    # --------------------------------------------------------
+    # SAVE
+    # --------------------------------------------------------
+
+    model.save(
+        str(MODEL_PATH)
+    )
+
+    print()
+    print(
+        "[V26] Model saved:"
+    )
+
+    print(
+        f"       "
+        f"{MODEL_PATH}.zip"
+    )
+
+    env.close()
+
+
+# ============================================================
+# MAIN
+# ============================================================
+
+if __name__ == "__main__":
+
+    train()
